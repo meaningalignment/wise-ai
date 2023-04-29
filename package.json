@@ -1,0 +1,19 @@
+{
+  "type": "module",
+  "engines": {
+    "node": ">=0.16.0"
+  },
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "dotenv": "^16.0.3",
+    "langchain": "^0.0.59",
+    "openai": "^3.2.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.12",
+    "@types/yargs": "^17.0.24",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  }
+}
