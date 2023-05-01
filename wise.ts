@@ -39,7 +39,7 @@ async function wiseResponse(dialogue: string, values: string) {
   // FIND A RELEVANT VALUE
   let relevantValue = await getRelevantValue(values, situation);
   if (relevantValue.match(/^None/)) {
-    values = await getUpdatedValues(values, situation)
+    values = (await getUpdatedValues(values, situation)).split('\n---\n').pop()!;
     relevantValue = await getRelevantValue(values, situation);
   }
   if (relevantValue.match(/^None/)) throw new Error('Could not find relevant value')
@@ -72,14 +72,14 @@ async function runEvals(dialogue: string, values: string) {
 async function getRelevantValue(values: string, situation: string) {
   return await llm(prompts['relevantValue'], pack({
     'ATTENTIONAL POLICIES': values,
-    'MORAL AND AESTHETIC CONSIDERATIONS': situation,
+    'THINGS TO BE AWARE OF': situation,
   }), 'RELEVANT VALUE')
 }
 
 async function getUpdatedValues(values: string, situation: string) {
   return await llm(prompts['updateValues'], pack({
     'ATTENTIONAL POLICIES': values,
-    'MORAL AND AESTHETIC CONSIDERATIONS': situation,
+    'THINGS TO BE AWARE OF': situation,
   }), 'UPDATED VALUES')
 }
 
