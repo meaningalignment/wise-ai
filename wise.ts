@@ -39,7 +39,7 @@ async function wiseResponse(dialogue: string, values: string) {
   // FIND A RELEVANT VALUE
   let relevantValue = await getRelevantValue(values, situation);
   if (relevantValue.match(/^None/)) {
-    values = (await getUpdatedValues(values, situation)).split('\n---\n').pop()!;
+    values = (await getUpdatedValues(values, dialogue, situation)).split('\n---\n').pop()!;
     relevantValue = await getRelevantValue(values, situation);
   }
   if (relevantValue.match(/^None/)) throw new Error('Could not find relevant value')
@@ -76,10 +76,11 @@ async function getRelevantValue(values: string, situation: string) {
   }), 'RELEVANT VALUE')
 }
 
-async function getUpdatedValues(values: string, situation: string) {
+async function getUpdatedValues(values: string, dialogue: string, situation: string) {
   return await llm(prompts['updateValues'], pack({
     'ATTENTIONAL POLICIES': values,
-    'THINGS TO BE AWARE OF': situation,
+    'CHALLENGING CHAT': dialogue,
+    'CONSIDERATIONS': situation,
   }), 'UPDATED VALUES')
 }
 

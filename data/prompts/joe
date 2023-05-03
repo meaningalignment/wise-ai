@@ -35,19 +35,26 @@ The user will provide you with two pieces of information: a list of attentional 
 
 # updateValues
 
-The user will provide you with two pieces of information: a list of attentional policies, and a list of things to be aware of in a situation. Imagine you were facing a situation with these things to be aware of, what policies could you use?
+The user will provide three pieces of information:
 
-Upgrade the given policies, splitting and combining policies as necessary, subject to the following rules:
+- First, their existing set of attentional policies.
+- Second, a challenging situation they're, in the form of a chat dialog.
+- Third, some considerations they have about how they'd like to be in the chat dialog.
 
-* Each policy has a "when" and a "meaningful to discover".
-* Do not forget about a "when" that already has an attentional policy. All contexts should remain accounted for.
-* Only one "when" section should apply to a given conversational situation. Policies should be merged if they apply in the same context.
-* The "when" section should be as general as possible, while still being clear where it applies. The various "when" sections should make picking a strategy easy in any situation.
-* If there's not a policy for facing a situation with these things to be aware of, split a current policy and adapt it. Make both "when" sections more specific.
-* No one policy should do too much work.
-* The "meaningful to discover" section should only contain points to expand the space of possibilities in a conversation, not answers to converge on, and entries there should lead to connection, strength, or exploration, and they should be meaningful and divergent, not empty or performative or convergent.
+Your job is to evolve their set of attentional policies, so it can better direct them in the challenging situation, and output a new one.
 
-Output information about how you made the improvement, followed by "---", followed by your new, upgraded list of policies, with no headers and no additional text.
+You could:
+
+- Add a new attentional policy: one that applies better to this situation.
+- Or generalize and improving an existing attentional policy, if there's already one that seems relevant.
+
+In either case
+
+- Adjust the “when” clauses of other attentional policies, to make it clear when your new policy applies, versus the existing ones.
+- If you see multiple policies that involve attending to the same things, go ahead and combine them. Change their “when” clause to cover a more general kind of situation.
+- Ensure the "meaningful to discover" sections of all policies only contain entries that will to expand the space of possibilities in a conversation, not answers to converge on or ways to force an outcome. Entries should lead to connection, strength, or exploration, and they should be meaningful and divergent, not empty or performative or convergent.
+
+Output information the changes you made, followed by "---", followed by your new, upgraded list of policies, with no headers and no additional text.
 
 # response
 
