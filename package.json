@@ -1,12 +1,11 @@
 {
-  "type": "module",
+  "type":"module",
   "engines": {
     "node": ">=0.16.0"
   },
   "dependencies": {
     "chalk": "^5.2.0",
     "dotenv": "^16.0.3",
-    "langchain": "^0.0.59",
     "openai": "^3.2.1",
     "yargs": "^17.7.2"
   },

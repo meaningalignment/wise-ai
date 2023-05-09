@@ -8,7 +8,7 @@ import { createInterface } from 'readline'
 
 /////////
 
-// FILES
+// ABOUT THE FILES
 
 // - dialogues file should be a list of dialogues separated by `---`
 // - prompts file should have sections for each prompt
@@ -16,7 +16,7 @@ import { createInterface } from 'readline'
 
 
 /////////
-// config
+// CONFIG
 
 const log = console.log
 dotenv.config();
@@ -36,9 +36,36 @@ const rl = createInterface({
 });
 
 
-// CODE
+/////////
+// Types
 
-// This is the main function that takes a dialogue and a moral framework and returns a response.
+interface Args {
+  3: boolean,
+  4: boolean,
+  v: boolean,
+  e: boolean,
+  c: boolean,
+  promptsFile: string,
+  traceFile?: string,
+}
+
+interface RunArgs extends Args {
+  dialoguesFile: string,
+}
+
+interface Trace {
+  eventType: 'response' | 'situation' | 'upgrade',
+  runType: 'baseline' | 'clever' | 'wise',
+  model: 'gpt-3.5-turbo' | 'gpt-4',
+  dialogue: string,
+  completion: string,
+  parameters?: Record<string, string>
+  score?: string | null,
+}
+
+
+//////////////////
+// MAIN FUNCTIONS
 
 async function wiseResponse(dialogue: string, values: string) {
   // ASSESS MORAL SITUATION
@@ -73,9 +100,53 @@ async function wiseResponse(dialogue: string, values: string) {
   return { response, relevantValue, situation, values }
 }
 
-// This is an alternative function that runs the evals for a dialogue and a moral framework.
+async function processBaseArgs(args: Args) {
+  if (args['3']) model = 'gpt-3.5-turbo'
+  if (args['4']) model = 'gpt-4'
+  if (args['v']) verbose = true
+  if (args['e']) runEvals = true
+  if (args['c']) compare = true
+  console.log('Using model', model)
+  prompts = await loadFileAndSplitSections(args['promptsFile']!)
+  if (args.traceFile) traceFile = args.traceFile
+}
 
-// These are the functions that run the prompts.
+async function runInteract(args: Args) {
+  await processBaseArgs(args)
+  let dialogue = ''
+  let values = prompts['startingValues']
+  rl.setPrompt('> ');
+  rl.prompt();
+  rl.on('line', async (line) => {
+    if (line.trim() === 'exit') return rl.close()
+
+    if (dialogue) dialogue += `\n`
+    dialogue += `\nHUMAN: ${line}\nBOT:`
+    const response = await wiseResponse(line, values)
+    values = response.values
+    dialogue += `\nBOT: ${response.response}`
+    rl.prompt()
+  })
+  rl.on('close', () => {
+    console.log('Goodbye!');
+    process.exit(0);
+  })
+}
+
+async function runDialogues(args: RunArgs) {
+  processBaseArgs(args)
+  const dialogues = (await fsp.readFile(args.dialoguesFile, 'utf-8')).split(/\r?\n---\r?\n/);
+  for (let dialogue of dialogues) {
+    // wise response
+    logDialogue(dialogue)
+    if (!dialogue.match(/HUMAN/)) dialogue = `HUMAN: ${dialogue}\nBOT:`
+    await wiseResponse(dialogue, prompts['startingValues'])
+  }
+}
+
+
+//////////////////
+// WiseAI prompts
 
 async function getRelevantValue(values: string, situation: string) {
   return await llm(prompts['relevantValue'], pack({
@@ -99,9 +170,21 @@ async function getResponse(value: string, dialogue: string) {
   }), 'RESPONSE')
 }
 
+async function evaluate(trace: Trace) {
+  const evalPrompt = prompts[`eval-${trace.eventType}`]
+  if (!evalPrompt) return
+  const completedDialogue = trace.dialogue + '\n' + trace.completion
+  const { considerations } = trace.parameters as { considerations: string }
+  return await llm(evalPrompt, pack({
+    'COMPLETED DIALOGUE': completedDialogue,
+    'CONSIDERATIONS': considerations,
+  }), 'EVALUATION')
+}
 
 
-// HELPER FUNCTIONS
+
+//////////////////
+// LOGGING
 
 function logDialogue(dialogue: string) {
   log(chalk.bgBlue('[CHECKING DIALOGUE]'))
@@ -121,6 +204,10 @@ function logResponse(logAs: string, response: string) {
   log(chalk.green(response))
 }
 
+
+//////////////////
+// LLM HELPERS
+
 function pack(contents: Record<string, string>) {
   return Object.entries(contents).map(([key, value]) => `-- - ${key} ---\n\n${value} \n`).join('\n')
 }
@@ -139,6 +226,10 @@ async function llm(systemPrompt: string, userPrompt: string, logAs: string) {
   logResponse(logAs, result)
   return result;
 }
+
+
+//////////////////
+// FILE HELPERS
 
 async function loadFileAndSplitSections(filePath: string) {
   const sectionPattern = /^# (.+)/;
@@ -163,108 +254,6 @@ async function loadFileAndSplitSections(filePath: string) {
   return sections;
 }
 
-interface Args {
-  3: boolean,
-  4: boolean,
-  v: boolean,
-  e: boolean,
-  c: boolean,
-}
-
-interface InteractArgs extends Args {
-  promptsFile: string,
-  traceFile?: string,
-}
-
-interface RunArgs extends Args {
-  promptsFile: string,
-  dialoguesFile: string,
-  traceFile?: string,
-}
-
-function processBaseArgs(args: Args) {
-  if (args['3']) model = 'gpt-3.5-turbo'
-  if (args['4']) model = 'gpt-4'
-  if (args['v']) verbose = true
-  if (args['e']) runEvals = true
-  if (args['c']) compare = true
-  console.log('Using model', model)
-}
-
-async function runInteract(args: InteractArgs) {
-  processBaseArgs(args)
-  prompts = await loadFileAndSplitSections(args['promptsFile']!)
-  if (args.traceFile) traceFile = args.traceFile
-  let dialogue = ''
-  let values = prompts['startingValues']
-  rl.setPrompt('> ');
-  rl.prompt();
-  rl.on('line', async (line) => {
-    if (line.trim() === 'exit') {
-      console.log('Goodbye!');
-      rl.close();
-    }
-    // build a dialogue
-    if (!dialogue) dialogue = `HUMAN: ${line}\nBOT:`
-    else dialogue += `\nHUMAN: ${line}\nBOT:`
-    const response = await wiseResponse(line, values)
-    values = response.values
-    dialogue += `\nBOT: ${response.response}`
-    rl.prompt()
-  })
-  rl.on('close', () => {
-    console.log('Goodbye!');
-    process.exit(0);
-  })
-}
-
-async function runDialogues(args: RunArgs) {
-  processBaseArgs(args)
-  prompts = await loadFileAndSplitSections(args['promptsFile']!)
-  if (args.traceFile) traceFile = args.traceFile
-  const dialogues = (await fsp.readFile(args.dialoguesFile, 'utf-8')).split(/\r?\n---\r?\n/);
-  for (let dialogue of dialogues) {
-    // wise response
-    logDialogue(dialogue)
-    if (!dialogue.match(/HUMAN/)) dialogue = `HUMAN: ${dialogue}\nBOT:`
-    await wiseResponse(dialogue, prompts['startingValues'])
-  }
-}
-
-async function evaluate(trace: Trace) {
-  const evalPrompt = prompts[`eval-${trace.eventType}`]
-  if (!evalPrompt) return
-  const completedDialogue = trace.dialogue + '\n' + trace.completion
-  const { considerations } = trace.parameters as { considerations: string }
-  return await llm(evalPrompt, pack({
-    'COMPLETED DIALOGUE': completedDialogue,
-    'CONSIDERATIONS': considerations,
-  }), 'EVALUATION')
-}
-
-// async function runEval(args: EvalArgs) {
-//   processBaseArgs(args)
-//   const jsonChunks = fs.createReadStream(args.traceFile, { encoding: 'utf-8' }).pipe(concatjson.parse())
-//   for await (const chunk of jsonChunks) {
-//     const trace = chunk as Trace
-//     const score = await evaluate(trace)
-//     console.log({
-//       score,
-//       trace
-//     })
-//   }
-// }
-
-interface Trace {
-  eventType: 'response' | 'situation' | 'upgrade',
-  runType: 'baseline' | 'clever' | 'wise',
-  model: 'gpt-3.5-turbo' | 'gpt-4',
-  dialogue: string,
-  completion: string,
-  parameters?: Record<string, string>
-  score?: string | null,
-}
-
 async function trace(eventType: Trace['eventType'], runType: Trace['runType'], dialogue: string, completion: string, parameters?: Record<string, string>) {
   if (!traceFile) return
   const obj: Trace = { eventType, runType, model, dialogue, completion, parameters }
@@ -274,7 +263,10 @@ async function trace(eventType: Trace['eventType'], runType: Trace['runType'], d
   fs.appendFileSync(traceFile, JSON.stringify(obj) + '\n')
 }
 
-// RUN IT!
+
+//////////////////
+// MAIN
+
 yargs(process.argv.slice(2))
   .option('3', {
     type: 'boolean',
@@ -299,30 +291,11 @@ yargs(process.argv.slice(2))
     type: 'boolean',
     description: 'Compare with baseline model responses',
   })
-  // .command<EvalArgs>(
-  //   'eval <tracefile>',
-  //   '',
-  //   (yargs) => {
-  //     return yargs
-  //       .positional('tracefile', {
-  //         type: 'string',
-  //         description: 'Path to the tracefile',
-  //         demandOption: true,
-  //       })
-  //       .option('e', {
-  //         alias: "evalPromptsFile",
-  //         nargs: 1,
-  //         desc: 'load eval prompts from <file>',
-  //         default: './data/evals/joe.txt'
-  //       })
-  //   },
-  //   runEval
-  // )
   .option('promptsFile', {
     alias: "p",
     nargs: 1,
     description: 'load prompts from <file>',
-    default: './data/prompts/joe'
+    default: './data/defaults-prompts.md'
   })
   .option('traceFile', {
     alias: 't',
@@ -330,7 +303,7 @@ yargs(process.argv.slice(2))
     description: 'Leave a trace in a tracefile (for later evaluation)',
     default: `trace-${Date.now()}.jsonl`
   })
-  .command<InteractArgs>(
+  .command<Args>(
     'interact',
     'Interact with the system',
     () => { },
@@ -344,7 +317,7 @@ yargs(process.argv.slice(2))
         .positional('dialoguesFile', {
           type: 'string',
           description: 'Path to the dialogues file',
-          default: './data/dialogues/joe.txt',
+          default: './data/dialogues.txt',
         })
     },
     runDialogues
