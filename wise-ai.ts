@@ -37,12 +37,12 @@ async function wiseResponse(dialogue: string, values: string) {
   await trace('situation', 'wise', dialogue, situation)
 
   // FIND A RELEVANT VALUE
-  let relevantValue = await getRelevantValue(values, situation);
+  let relevantValue = await getRelevantValue(values, dialogue, situation);
   if (relevantValue.match(/^None/)) {
     let previousValues = values;
     values = (await getUpdatedValues(values, dialogue, situation)).split('\n---\n').pop()!;
     await trace('upgrade', 'wise', dialogue, values, { previousValues, situation })
-    relevantValue = await getRelevantValue(values, situation);
+    relevantValue = await getRelevantValue(values, dialogue, situation);
   }
   if (relevantValue.match(/^None/)) throw new Error('Could not find relevant value')
 

@@ -23,14 +23,14 @@ Merge answers into one bullet list of imagined emotional reflections on your par
 
 The user will provide three pieces of information:
 
-- First, a list of attentional policies,
+- First, BOT's current list of attentional policies,
 - Second, a challenging situation for BOT, in the form of a chat dialog.
-- Third, a set of ways the conversation could go that might be good or bad for BOT.
+- Third, ways the conversation could go, that would be good or bad for BOT.
 
-Your job is to check whether there's an attentional policy in the list that would help navigate the set of ways the conversation could go well.
+Your job is to check: does the list of attentional policies contain one that is great for this conversation? That will help it could go well?
 
-- If there is, output that item by itself.
-- If none of the attentional policies seem adequate to help you address the things to be aware of, output the word "None", and no other text.
+- If there is an adequate attentional policy, output it by itself.
+- If another attentional policy, not in the list, would be better, output the word "None", and no other text.
 
 # updateValues
 
