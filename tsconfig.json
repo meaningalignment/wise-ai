@@ -4,26 +4,20 @@
   ],
   "compilerOptions": {
     "lib": [
-      "ES2020"
+      "ES2022"
     ],
-    "isolatedModules": true,
     "esModuleInterop": true,
-    "module": "nodenext",
-    // "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "resolveJsonModule": true,
-    "target": "ES2020",
+    "target": "ES2022",
     "strict": true,
-    "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "./app/*"
-      ]
-    },
     "noEmit": true
   },
   "ts-node": {
-    "esm": true
+    "esm": true,
+    "transpileOnly": true,
   }
 }

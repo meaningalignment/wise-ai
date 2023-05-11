@@ -1,5 +1,13 @@
 {
-  "type":"module",
+  "name": "wise-ai",
+  "version": "0.1",
+  "type": "module",
+  "bin": {
+    "wise-ai": "wise-ai.ts"
+  },
+  "scripts": {
+    "wise-ai": "./wise-ai.ts"
+  },
   "engines": {
     "node": ">=0.16.0"
   },
@@ -12,7 +20,7 @@
   "devDependencies": {
     "@types/node": "^18.15.12",
     "@types/yargs": "^17.0.24",
-    "ts-node": "^10.9.1",
+    "tsx": "^3.12.7",
     "typescript": "^5.0.4"
   }
 }
