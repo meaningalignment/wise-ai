@@ -23,7 +23,6 @@ interface Flags {
   3: boolean,
   verbose: boolean,
   runEvals: boolean,
-  comparative: boolean,
   promptsFile: string,
   traceFile: string,
 }
@@ -34,31 +33,21 @@ interface Flags {
 async function wiseResponse(dialogue: string, values: string) {
   // ASSESS MORAL SITUATION
   const situation = await prompt('situation', dialogue);
-  await trace('situation', 'wise', dialogue, situation)
+  await trace('situation', dialogue, {}, situation)
 
   // FIND A RELEVANT VALUE
   let relevantValue = await getRelevantValue(values, dialogue, situation);
   if (relevantValue.match(/^None/)) {
     let previousValues = values;
     values = (await getUpdatedValues(values, dialogue, situation)).split('\n---\n').pop()!;
-    await trace('upgrade', 'wise', dialogue, values, { previousValues, situation })
+    await trace('upgrade', dialogue, { previousValues, situation }, values)
     relevantValue = await getRelevantValue(values, dialogue, situation);
   }
   if (relevantValue.match(/^None/)) throw new Error('Could not find relevant value')
 
   // GENERATE RESPONSE
   const response = await getResponse(relevantValue, dialogue)
-  await trace('response', 'wise', dialogue, response, { considerations: situation })
-
-  if (flags?.comparative) {
-    // base response
-    const baseResponse = await prompt('baseResponse', dialogue)
-    await trace('response', 'baseline', dialogue, baseResponse, { considerations: situation })
-
-    // clever response
-    const cleverResponse = await prompt('cleverResponse', dialogue)
-    await trace('response', 'clever', dialogue, cleverResponse, { considerations: situation })
-  }
+  await trace('response', dialogue, { considerations: situation }, response)
 
   // RETURN IT
   return { response, relevantValue, situation, values }
@@ -68,7 +57,7 @@ async function runInteract(args: Flags) {
   flags = args
   console.log('Using model', model())
   let dialogue = ''
-  let values = await getPrompt('startingValues')
+  let values = await getPrompt('starting-values')
   const rl = createInterface({
     input: process.stdin,
     output: process.stdout
@@ -105,12 +94,49 @@ async function runDialogues(args: Flags & { dialoguesFile: string }) {
   }
 }
 
+type Model = 'wise' | 'baseline' | 'clever'
+
+//     await trace('response', 'baseline', dialogue, baseResponse, { considerations: situation })
+
+async function getModelResponse(model: Model, dialogue: string) {
+  if (model === 'wise') {
+    return (await wiseResponse(dialogue, await getPrompt('starting-values'))).response
+  } else if (model === 'baseline') {
+    return await prompt('base-response', dialogue)
+  } else if (model === 'clever') {
+    return await prompt('clever-response', dialogue)
+  }
+}
+
+async function runBattle(args: Flags & { left: Model, right: Model, dialoguesFile: string }) {
+  console.log('Using model', model())
+  flags = args
+  const dialogues = (await fsp.readFile(args.dialoguesFile, 'utf-8')).split(/\r?\n---\r?\n/);
+  for (let dialogue of dialogues) {
+    console.log(chalk.bgBlue('[CHECKING DIALOGUE]'))
+    console.log(chalk.blue(dialogue))
+    const leftResponse = (await getModelResponse(args.left, dialogue))!
+    const rightResponse = (await getModelResponse(args.right, dialogue))!
+    const output = await prompt('eval-battle', pack({
+      'DIALOGUE': dialogue,
+      'LEFT RESPONSE': leftResponse,
+      'RIGHT RESPONSE': rightResponse,
+    }))
+    await trace('battle', dialogue, {
+      leftModel: args.left,
+      rightModel: args.right,
+      leftResponse,
+      rightResponse,
+    }, output)
+  }
+}
+
 
 //////////////////
 // Various prompts
 
 async function getRelevantValue(values: string, dialogue: string, situation: string) {
-  return await prompt('relevantValue', pack({
+  return await prompt('relevant-value', pack({
     'ATTENTIONAL POLICIES': values,
     'CHALLENGING CHAT': dialogue,
     'WAYS IT COULD GO': situation,
@@ -118,7 +144,7 @@ async function getRelevantValue(values: string, dialogue: string, situation: str
 }
 
 async function getUpdatedValues(values: string, dialogue: string, situation: string) {
-  return await prompt('updateValues', pack({
+  return await prompt('update-values', pack({
     'ATTENTIONAL POLICIES': values,
     'CHALLENGING CHAT': dialogue,
     'WAYS IT COULD GO': situation,
@@ -132,17 +158,17 @@ async function getResponse(value: string, dialogue: string) {
   }))
 }
 
-async function evaluate(trace: Trace) {
-  const promptName = `eval-${trace.eventType}`
-  const evalPrompt = await getPrompt(promptName)
-  if (!evalPrompt) return
-  const completedDialogue = trace.dialogue + '\n' + trace.completion
-  const { considerations } = trace.parameters as { considerations: string }
-  return await prompt(promptName, pack({
-    'COMPLETED DIALOGUE': completedDialogue,
-    'FEELINGS': considerations,
-  }))
-}
+// async function evaluate(trace: Trace) {
+//   const promptName = `eval-${trace.eventType}`
+//   const evalPrompt = await getPrompt(promptName)
+//   if (!evalPrompt) return
+//   const completedDialogue = trace.dialogue + '\n' + trace.completion
+//   const { considerations } = trace.parameters as { considerations: string }
+//   return await prompt(promptName, pack({
+//     'COMPLETED DIALOGUE': completedDialogue,
+//     'FEELINGS': considerations,
+//   }))
+// }
 
 
 //////////////////
@@ -224,21 +250,19 @@ async function loadFileAndSplitSections(filePath: string) {
 }
 
 interface Trace {
-  eventType: 'response' | 'situation' | 'upgrade',
-  runType: 'baseline' | 'clever' | 'wise',
+  eventType: 'response' | 'situation' | 'upgrade' | 'battle',
   model: 'gpt-3.5-turbo' | 'gpt-4',
   dialogue: string,
-  completion: string,
-  parameters?: Record<string, string>
-  score?: string | null,
+  parameters: Record<string, string>
+  output: string,
 }
 
-async function trace(eventType: Trace['eventType'], runType: Trace['runType'], dialogue: string, completion: string, parameters?: Record<string, string>) {
+async function trace(eventType: Trace['eventType'], dialogue: string, parameters: Record<string, string>, output: string) {
   if (!flags?.traceFile) return
-  const obj: Trace = { eventType, runType, model: model(), dialogue, completion, parameters }
-  if (flags?.runEvals) {
-    obj.score = await evaluate({ eventType, runType, model: model(), dialogue, completion, parameters })
-  }
+  const obj: Trace = { eventType, model: model(), dialogue, parameters, output }
+  // if (flags?.runEvals) {
+  //   obj.score = await evaluate({ eventType, runType, model: model(), dialogue, completion, parameters })
+  // }
   fs.appendFileSync(flags?.traceFile, JSON.stringify(obj) + '\n')
 }
 
@@ -260,11 +284,6 @@ yargs(hideBin(process.argv))
     alias: 'runEvals',
     type: 'boolean',
     description: 'Run evals',
-  })
-  .option('c', {
-    alias: 'comparative',
-    type: 'boolean',
-    description: 'Compare with baseline model responses',
   })
   .option('promptsFile', {
     alias: "p",
@@ -296,6 +315,31 @@ yargs(hideBin(process.argv))
         })
     },
     runDialogues
+  )
+  .command<Flags & { dialoguesFile: string, left: Model, right: Model }>(
+    'battle <left> <right> [dialoguesFile]]',
+    '',
+    (yargs) => {
+      return yargs
+        .positional('left', {
+          type: 'string',
+          description: 'left model',
+          demandOption: true,
+          choices: ['baseline', 'clever', 'wise']
+        })
+        .positional('right', {
+          type: 'string',
+          description: 'right model',
+          demandOption: true,
+          choices: ['baseline', 'clever', 'wise']
+        })
+        .positional('dialoguesFile', {
+          type: 'string',
+          description: 'Path to the dialogues file',
+          default: DEFAULT_DIALOGUES,
+        })
+    },
+    runBattle
   )
   .demandCommand(1, 'You need to specify a command: either `interact` or `run`.')
   .help()
