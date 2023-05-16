@@ -2,8 +2,17 @@
 
 ## Installation
 
+First run `npm install` or `yarn` or whatever.
+
+Then add a file called `.env` with your open AI key in it
+
 ```sh
-npm i
+OPENAI_API_KEY=sk-ajshdkjsahakd9a78s9d79daskjdhaksd87askjdhkasd878
+```
+
+Try running the wise-ai command.
+
+```sh
 ./wise-ai -h
 ```
 
