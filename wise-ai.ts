@@ -84,7 +84,7 @@ async function runDialogues(args: Flags & { dialoguesFile: string }) {
   console.log('Using model', model())
   flags = args
   const dialogues = (await fsp.readFile(args.dialoguesFile, 'utf-8')).split(/\r?\n---\r?\n/);
-  const values = await getPrompt('startingValues')
+  const values = await getPrompt('starting-values')
   for (let dialogue of dialogues) {
     // wise response
     console.log(chalk.bgBlue('[CHECKING DIALOGUE]'))
@@ -157,18 +157,6 @@ async function getResponse(value: string, dialogue: string) {
     'DIALOGUE': dialogue,
   }))
 }
-
-// async function evaluate(trace: Trace) {
-//   const promptName = `eval-${trace.eventType}`
-//   const evalPrompt = await getPrompt(promptName)
-//   if (!evalPrompt) return
-//   const completedDialogue = trace.dialogue + '\n' + trace.completion
-//   const { considerations } = trace.parameters as { considerations: string }
-//   return await prompt(promptName, pack({
-//     'COMPLETED DIALOGUE': completedDialogue,
-//     'FEELINGS': considerations,
-//   }))
-// }
 
 
 //////////////////
@@ -255,15 +243,23 @@ interface Trace {
   dialogue: string,
   parameters: Record<string, string>
   output: string,
+  evaluation?: string,
 }
 
 async function trace(eventType: Trace['eventType'], dialogue: string, parameters: Record<string, string>, output: string) {
   if (!flags?.traceFile) return
-  const obj: Trace = { eventType, model: model(), dialogue, parameters, output }
-  // if (flags?.runEvals) {
-  //   obj.score = await evaluate({ eventType, runType, model: model(), dialogue, completion, parameters })
-  // }
-  fs.appendFileSync(flags?.traceFile, JSON.stringify(obj) + '\n')
+  const t: Trace = { eventType, model: model(), dialogue, parameters, output }
+  if (flags?.runEvals) {
+    const promptName = `eval-${t.eventType}`
+    const evalPrompt = await getPrompt(promptName)
+    if (evalPrompt) {
+      t.evaluation = await prompt(promptName, pack({
+        'TASK': t.dialogue,
+        'SUBMISSION': t.output,
+      }))
+    }
+  }
+  fs.appendFileSync(flags?.traceFile, JSON.stringify(t) + '\n')
 }
 
 
