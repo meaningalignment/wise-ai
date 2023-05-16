@@ -10,22 +10,22 @@ Our current project focuses on assessing these capabilities in existing LLMs, an
 
 ## Wise reponse evals
 
-This repo includes a prompt (`eval-response` in `default-prompts.md`) for evaluating LLM responses to different moral scenarios (listed in `dialogues.txt`) against one another by running `wise-ai battle` which will compare two ways to respond to each moral situation, and auto-eval which response is wiser.
+You can run `wise-ai battle` which will compare two ways to respond to various moral situations against one another, and auto-eval which response is wiser. (See `eval-response` in `default-prompts.md` for the comparison prompt, and the list of moral scenarios in `dialogues.txt`.)
 
 ## Wise AI Prototype
 
-This repo also includes a prototype of a "Wise AI", built as a prompt chain for GPT-4. This prototype uses step-by-step moral reasoning to achieve the above:
+This repo also includes a prototype of a "Wise AI", built as a prompt chain for GPT-4. This prototype uses step-by-step moral reasoning (implemented in fn `wiseResponse` in `wise-ai.ts`) to achieve the above:
 
 - First, it identifies the moral considerations of its current situation.
 - Then, it considers its current policies and decides whether they address those moral considerations.
 - Finally, it updates its policies if necessary, and uses them to guide its response.
 
-That's implemented in fn `wiseResponse` in `wise-ai.ts`.
-
 We've found that this yields a significantly wiser chatbot, compared to normal chatgpt responses. (Run `wise-ai interact` or `wise-ai battle baseline wise` to see for yourself).
 
+This prototype already exhibits three advantages over current chatbots:
+
 1. Our prototype grapples with its moral situation, and tries to live up to it.
-2. It learns morally, and could develop values that aren't programmed into it, as it faces more and more complicated situations.
+2. It learns morally (only in `wise-ai interact` mode), and could develop values that aren't programmed into it, as it faces more and more complicated situations.
 3. As it interact with a human, it comes from a point of view that humans can understand. The user can track what its concerned about. It feels more like engaging with an interpretable entity.
 
 (It would be fascinating to see a model fine-tuned based on the responses of such a Wise AI. Even better would be a model that not only answers based on its values, but also attaches these values to its responses, or makes them inspectable.)
