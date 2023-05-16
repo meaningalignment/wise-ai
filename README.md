@@ -1,5 +1,12 @@
 # wise-ai
 
+## Installation
+
+```sh
+npm i
+./wise-ai -h
+```
+
 ## Running
 
 By default, you can run `wise-ai interact` to get an interactive prompt using the default wise ai prompts (in `default-prompts.md`). To use your own prompts, run `wise-ai interact -p <your-prompt-file>`.
