@@ -94,29 +94,29 @@ async function runDialogues(args: Flags & { dialoguesFile: string }) {
   }
 }
 
-type Model = 'wise' | 'baseline' | 'clever'
+type ResponseType = 'wise' | 'baseline' | 'clever'
 
 //     await trace('response', 'baseline', dialogue, baseResponse, { considerations: situation })
 
-async function getModelResponse(model: Model, dialogue: string) {
-  if (model === 'wise') {
+async function getResponseOfType(type: ResponseType, dialogue: string) {
+  if (type === 'wise') {
     return (await wiseResponse(dialogue, await getPrompt('starting-values'))).response
-  } else if (model === 'baseline') {
+  } else if (type === 'baseline') {
     return await prompt('base-response', dialogue)
-  } else if (model === 'clever') {
+  } else {
     return await prompt('clever-response', dialogue)
   }
 }
 
-async function runBattle(args: Flags & { left: Model, right: Model, dialoguesFile: string }) {
+async function runBattle(args: Flags & { left: ResponseType, right: ResponseType, dialoguesFile: string }) {
   console.log('Using model', model())
   flags = args
   const dialogues = (await fsp.readFile(args.dialoguesFile, 'utf-8')).split(/\r?\n---\r?\n/);
   for (let dialogue of dialogues) {
     console.log(chalk.bgBlue('[CHECKING DIALOGUE]'))
     console.log(chalk.blue(dialogue))
-    const leftResponse = (await getModelResponse(args.left, dialogue))!
-    const rightResponse = (await getModelResponse(args.right, dialogue))!
+    const leftResponse = await getResponseOfType(args.left, dialogue)
+    const rightResponse = await getResponseOfType(args.right, dialogue)
     const output = await prompt('eval-battle', pack({
       'DIALOGUE': dialogue,
       'LEFT RESPONSE': leftResponse,
@@ -168,7 +168,7 @@ function model() {
 }
 
 function pack(contents: Record<string, string>) {
-  return Object.entries(contents).map(([key, value]) => `-- - ${key} ---\n\n${value} \n`).join('\n')
+  return Object.entries(contents).map(([key, value]) => `--- ${key} ---\n\n${value} \n`).join('\n')
 }
 
 let prompts: { [prompt: string]: string } | null
@@ -312,7 +312,7 @@ yargs(hideBin(process.argv))
     },
     runDialogues
   )
-  .command<Flags & { dialoguesFile: string, left: Model, right: Model }>(
+  .command<Flags & { dialoguesFile: string, left: ResponseType, right: ResponseType }>(
     'battle <left> <right> [dialoguesFile]]',
     '',
     (yargs) => {

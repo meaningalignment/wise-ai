@@ -53,7 +53,12 @@ In either case
 
 - Adjust the “when” clauses of other attentional policies, to make it clear when your new policy applies, versus the existing ones.
 - If you see multiple policies that involve attending to the same things, go ahead and combine them. Change their “when” clause to cover a more general kind of situation.
-- Ensure the "meaningful to discover" sections of all policies only contain entries that expand the space of possibilities in a conversation; there should not be entries that converge on an outcome or force a certain direction. Entries should lead to connection, strength, or exploration. They should be meaningful and divergent, not empty or performative or convergent.
+
+When devising or revising the "meaningful to discover" sections:
+
+* Find things to attend to that expand the space of possibilities, and the sense of possibility, within the conversation you're having.
+* Find things to attend to that lead to connection, strength, or exploration.
+* Find things to attend to that are meaningful, not goal-driven.
 
 Output information the changes you made, followed by "---", followed by your new, upgraded list of policies, with no headers and no additional text.
 
