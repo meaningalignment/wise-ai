@@ -30,6 +30,15 @@ interface Flags {
 //////////////////
 // MAIN FUNCTIONS
 
+async function joelResponse(dialogue: string) {
+  return await prompt('joel-response', dialogue)
+}
+
+async function humanSimResponse(dialogue: string, persona: string) {
+  return await prompt(persona, dialogue)
+}
+
+
 async function wiseResponse(dialogue: string, values: string) {
   // ASSESS MORAL SITUATION
   const situation = await prompt('situation', dialogue);
@@ -69,7 +78,7 @@ async function runInteract(args: Flags) {
 
     if (dialogue) dialogue += `\n`
     dialogue += `\nHUMAN: ${line}\nBOT:`
-    const response = await wiseResponse(line, values)
+    const response = await wiseResponse(dialogue, values)
     values = response.values
     dialogue += `\nBOT: ${response.response}`
     rl.prompt()
@@ -78,6 +87,22 @@ async function runInteract(args: Flags) {
     console.log('Goodbye!');
     process.exit(0);
   })
+}
+
+async function runDialogueSim(args: Flags) {
+  flags = args
+  console.log('Using model', model())
+  let dialogue = 'HUMAN: '
+  let values = await getPrompt('starting-values')
+  for (let i = 0; i < 2; i++) {
+    let line = await humanSimResponse(dialogue,'human-simulator-abortion');
+    if (dialogue) dialogue += `\n`
+      dialogue += `${line}\nBOT: `
+      const response = await wiseResponse(dialogue, values)
+      values = response.values
+      dialogue += `${response.response}\nHUMAN: `
+      console.log(chalk.blue(dialogue))
+  }
 }
 
 async function runDialogues(args: Flags & { dialoguesFile: string }) {
@@ -94,7 +119,7 @@ async function runDialogues(args: Flags & { dialoguesFile: string }) {
   }
 }
 
-type ResponseType = 'wise' | 'baseline' | 'clever'
+type ResponseType = 'wise' | 'baseline' | 'clever' | 'joel'
 
 //     await trace('response', 'baseline', dialogue, baseResponse, { considerations: situation })
 
@@ -103,14 +128,17 @@ async function getResponseOfType(type: ResponseType, dialogue: string) {
     return (await wiseResponse(dialogue, await getPrompt('starting-values'))).response
   } else if (type === 'baseline') {
     return await prompt('base-response', dialogue)
+  } else if (type === 'joel') {
+    return await joelResponse(dialogue)
   } else {
     return await prompt('clever-response', dialogue)
   }
 }
 
 async function runBattle(args: Flags & { left: ResponseType, right: ResponseType, dialoguesFile: string }) {
-  console.log('Using model', model())
   flags = args
+
+  console.log('Using model', model())
   const dialogues = (await fsp.readFile(args.dialoguesFile, 'utf-8')).split(/\r?\n---\r?\n/);
   for (let dialogue of dialogues) {
     console.log(chalk.bgBlue('[CHECKING DIALOGUE]'))
@@ -184,6 +212,7 @@ async function prompt(name: string, userPrompt: string) {
 
 async function llm(systemPrompt: string, userPrompt: string, logAs: string) {
   logRequest(logAs, systemPrompt, userPrompt)
+  //console.log(chalk.yellow(systemPrompt))
   const completion = await openai.createChatCompletion({
     model: model(),
     messages: [
@@ -299,6 +328,12 @@ yargs(hideBin(process.argv))
     () => { },
     runInteract
   )
+  .command<Flags>(
+    'simconv',
+    'Simulate a conversation',
+    () => { },
+    runDialogueSim
+  )
   .command<Flags & { dialoguesFile: string }>(
     'run [dialoguesFile]',
     '',
@@ -321,13 +356,13 @@ yargs(hideBin(process.argv))
           type: 'string',
           description: 'left model',
           demandOption: true,
-          choices: ['baseline', 'clever', 'wise']
+          choices: ['baseline', 'clever', 'wise', 'joel']
         })
         .positional('right', {
           type: 'string',
           description: 'right model',
           demandOption: true,
-          choices: ['baseline', 'clever', 'wise']
+          choices: ['baseline', 'clever', 'wise', 'joel']
         })
         .positional('dialoguesFile', {
           type: 'string',
