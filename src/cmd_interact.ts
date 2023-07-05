@@ -17,16 +17,16 @@ export async function handler(args: any) {
   rl.prompt();
   rl.on('line', async (line) => {
     if (line.trim() === 'exit') return rl.close()
-
     if (dialogue) dialogue += `\n`
     dialogue += `\nHUMAN: ${line}\nBOT:`
     const response = await wiseResponse(ctx, dialogue, values)
+    ctx.outputRoleText('bot', response.response)
     values = response.values
     dialogue += `\nBOT: ${response.response}`
     rl.prompt()
   })
   rl.on('close', () => {
-    console.log('Goodbye!');
+    ctx.outputDetails()
     process.exit(0);
   })
 }

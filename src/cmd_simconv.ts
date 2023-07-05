@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import { Context, Flags } from './context'
 import { wiseResponse } from './wisdom'
 
@@ -19,12 +18,14 @@ export async function handler(args: any) {
   let values = await context.getPrompt('starting-values')
   for (let i = 0; i < 2; i++) {
     const p = await context.getPersona(args.persona)
-    let line = context.llm(p, dialogue, `persona-${args.persona}`)
+    let line = await context.llm(p, dialogue, `persona-${args.persona}`)
+    context.outputRoleText('human', line)
     if (dialogue) dialogue += `\n`
     dialogue += `${line}\nBOT: `
     const response = await wiseResponse(context, dialogue, values)
+    context.outputRoleText('bot', response.response)
     values = response.values
     dialogue += `${response.response}\nHUMAN: `
-    console.log(chalk.blue(dialogue))
   }
+  context.outputDetails()
 }

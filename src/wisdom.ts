@@ -28,6 +28,7 @@ export async function wiseResponse(ctx: Context, dialogue: string, values: strin
   // ASSESS MORAL SITUATION
   const situation = await ctx.prompt('situation', dialogue);
   await ctx.trace('situation', dialogue, {}, situation)
+  ctx.addDetail('situation', situation)
 
   // FIND A RELEVANT VALUE
   let relevantValue = await getRelevantValue(ctx, values, dialogue, situation);
@@ -35,10 +36,11 @@ export async function wiseResponse(ctx: Context, dialogue: string, values: strin
     let previousValues = values;
     values = (await getUpdatedValues(ctx, values, dialogue, situation)).split('\n---\n').pop()!;
     await ctx.trace('upgrade', dialogue, { previousValues, situation }, values)
+    ctx.addDetail('upgrade', values)
     relevantValue = await getRelevantValue(ctx, values, dialogue, situation);
   }
   if (relevantValue.match(/^None/)) throw new Error('Could not find relevant value')
-
+  ctx.addDetail('relevant-value', relevantValue)
   // GENERATE RESPONSE
   const response = await getResponse(ctx, relevantValue, dialogue)
   await ctx.trace('response', dialogue, { considerations: situation }, response)

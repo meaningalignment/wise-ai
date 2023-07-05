@@ -31,12 +31,13 @@ interface Trace {
 export class Context {
   prompts: { [prompt: string]: string } | null = null
   personas: { [persona: string]: string } | null = null
+  details: [string, string][] = []
 
   constructor(
     public readonly flags: Flags,
   ) {
     this.flags = flags;
-    console.log('Using model', this.model())
+    this.outputHeader()
   }
 
   model() {
@@ -77,8 +78,47 @@ export class Context {
     return result;
   }
 
+  outputHeader() {
+    this.outputH1('Settings')
+    this.outputText(`model: ${this.model()}`)
+    const fields = ['promptsFile', 'personasFile', 'persona', 'dialoguesFile']
+    fields.forEach((name) => {
+      const value = (this.flags as any)[name]
+      if (value) this.outputText(`${name}: ${value}`)
+    })
+    this.outputH1('Dialogue')
+  }
+
+  outputH1(text: string) {
+    console.log(chalk.green((`\n# ${text}\n`)))
+  }
+
+  outputH2(text: string) {
+    console.log(chalk.blue((`## ${text}\n`)))
+  }
+
+  outputText(text: string) {
+    console.log(text)
+  }
+
+  outputRoleText(role: 'bot' | 'human', text: string) {
+    if (role === 'bot') console.log(chalk.yellow(`BOT: ${text}`))
+    else console.log(chalk.red(`HUMAN: ${text}`))
+  }
+
+  addDetail(name: string, value: string) {
+    this.details.push([name, value])
+  }
+
+  outputDetails() {
+    this.outputH1('Details')
+    for (const [name, value] of this.details) {
+      this.outputH2(name)
+      this.outputText(value)
+    }
+  }
+
   logRequest(logAs: string, ...args: string[]) {
-    if (!this.flags?.verbose) console.log(chalk.bgGreen(`[${logAs}]`))
     if (this.flags?.verbose) {
       console.log(chalk.bgYellow(`[ISSUING REQUEST: ${logAs}]`))
       console.log(chalk.yellow(...args))
@@ -86,8 +126,10 @@ export class Context {
   }
 
   logResponse(logAs: string, response: string) {
-    if (this.flags?.verbose) console.log(chalk.bgGreen(`[${logAs}]`))
-    console.log(chalk.green(response))
+    if (this.flags?.verbose) {
+      console.log(chalk.bgGreen(`[${logAs}]`))
+      console.log(chalk.green(response))
+    }
   }
 
   async trace(eventType: Trace['eventType'], dialogue: string, parameters: Record<string, string>, output: string) {
