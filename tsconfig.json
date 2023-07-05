@@ -14,7 +14,8 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
-    "noEmit": true
+    "noEmit": true,
+    "noUnusedLocals": true,
   },
   "ts-node": {
     "esm": true,
