@@ -5,6 +5,7 @@ import { promises as fsp } from "fs"
 
 export const command = 'run [dialoguesFile]'
 export const describe = 'Run all dialogues in a dialogue file'
+
 export function builder(yargs: any) {
   return yargs
     .positional('dialoguesFile', {

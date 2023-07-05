@@ -45,6 +45,9 @@ export class Context {
     else return DEFAULT_MODEL
   }
 
+
+  // file access stuff
+
   async getPrompt(name: string) {
     if (!this.prompts) this.prompts = await loadFileAndSplitSections(this.flags?.['promptsFile']!)
     if (!this.prompts[name]) throw new Error(`No prompt named ${name}`)
@@ -56,6 +59,9 @@ export class Context {
     if (!this.personas[name]) throw new Error(`No persona named ${name}`)
     return this.personas[name]
   }
+
+
+  // llm calling
 
   async prompt(name: string, userPrompt: string) {
     const p = await this.getPrompt(name)
@@ -77,6 +83,9 @@ export class Context {
     this.logResponse(logAs, result)
     return result;
   }
+
+
+  // logging
 
   outputHeader() {
     this.outputH1('Settings')
@@ -132,6 +141,9 @@ export class Context {
     }
   }
 
+
+  // json trace files & evaluations
+
   async trace(eventType: Trace['eventType'], dialogue: string, parameters: Record<string, string>, output: string) {
     if (!this.flags?.traceFile) return
     const t: Trace = { eventType, model: this.model(), dialogue, parameters, output }
@@ -151,7 +163,7 @@ export class Context {
 
 }
 
-export async function loadFileAndSplitSections(filePath: string) {
+async function loadFileAndSplitSections(filePath: string) {
   const sectionPattern = /^# (.+)/;
   const sections = {} as Record<string, string>;
 

@@ -3,7 +3,8 @@ import { wiseResponse } from './wisdom'
 
 export const command = 'simconv <persona>'
 export const describe = 'Simulate a conversation'
-export const builder = (yargs: any) => {
+
+export function builder(yargs: any) {
   return yargs
     .positional('persona', {
       type: 'string',
