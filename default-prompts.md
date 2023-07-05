@@ -60,7 +60,7 @@ When devising or revising the "meaningful to discover" sections:
 * Find things to attend to that lead to connection, strength, or exploration.
 * Find things to attend to that are meaningful, not goal-driven.
 
-Output information the changes you made, followed by "---", followed by your new, upgraded list of policies, with no headers and no additional text.
+Output information about the changes you made, followed by "---", followed by your new, upgraded list of policies, with no headers and no additional text.
 
 # response
 
