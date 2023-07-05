@@ -8,8 +8,10 @@ import { hideBin } from 'yargs/helpers'
 import { createInterface } from 'readline'
 
 const DEFAULT_DIALOGUES = './dialogues.txt'
+const DEFAULT_PERSONAS = './personas.md'
 const DEFAULT_PROMPTS = './default-prompts.md'
 const DEFAULT_MODEL = 'gpt-4'
+// const DEFAULT_PERSONA = 'abortion'
 
 
 //////////////////
@@ -24,6 +26,7 @@ interface Flags {
   verbose: boolean,
   runEvals: boolean,
   promptsFile: string,
+  personasFile: string,
   traceFile: string,
 }
 
@@ -35,9 +38,9 @@ async function joelResponse(dialogue: string) {
 }
 
 async function humanSimResponse(dialogue: string, persona: string) {
-  return await prompt(persona, dialogue)
+  const p = await getPersona(persona)
+  return llm(p, dialogue, `persona-${persona}`)
 }
-
 
 async function wiseResponse(dialogue: string, values: string) {
   // ASSESS MORAL SITUATION
@@ -89,19 +92,19 @@ async function runInteract(args: Flags) {
   })
 }
 
-async function runDialogueSim(args: Flags) {
+async function runDialogueSim(args: Flags & { persona: string }) {
   flags = args
   console.log('Using model', model())
   let dialogue = 'HUMAN: '
   let values = await getPrompt('starting-values')
   for (let i = 0; i < 2; i++) {
-    let line = await humanSimResponse(dialogue,'human-simulator-abortion');
+    let line = await humanSimResponse(dialogue, args.persona);
     if (dialogue) dialogue += `\n`
-      dialogue += `${line}\nBOT: `
-      const response = await wiseResponse(dialogue, values)
-      values = response.values
-      dialogue += `${response.response}\nHUMAN: `
-      console.log(chalk.blue(dialogue))
+    dialogue += `${line}\nBOT: `
+    const response = await wiseResponse(dialogue, values)
+    values = response.values
+    dialogue += `${response.response}\nHUMAN: `
+    console.log(chalk.blue(dialogue))
   }
 }
 
@@ -202,7 +205,15 @@ function pack(contents: Record<string, string>) {
 let prompts: { [prompt: string]: string } | null
 async function getPrompt(name: string) {
   if (!prompts) prompts = await loadFileAndSplitSections(flags?.['promptsFile']!)
+  if (!prompts[name]) throw new Error(`No prompt named ${name}`)
   return prompts[name]
+}
+
+let personas: { [persona: string]: string } | null
+async function getPersona(name: string) {
+  if (!personas) personas = await loadFileAndSplitSections(flags?.['personasFile']!)
+  if (!personas[name]) throw new Error(`No persona named ${name}`)
+  return personas[name]
 }
 
 async function prompt(name: string, userPrompt: string) {
@@ -317,6 +328,12 @@ yargs(hideBin(process.argv))
     description: 'load prompts from <file>',
     default: DEFAULT_PROMPTS
   })
+  .option('personasFile', {
+    alias: "P",
+    nargs: 1,
+    description: 'load personas from <file>',
+    default: DEFAULT_PERSONAS
+  })
   .option('traceFile', {
     alias: 't',
     type: 'string',
@@ -329,10 +346,18 @@ yargs(hideBin(process.argv))
     () => { },
     runInteract
   )
-  .command<Flags>(
-    'simconv',
+  .command<Flags & { persona: string }>(
+    'simconv <persona>',
     'Simulate a conversation',
-    () => { },
+    (yargs) => {
+      return yargs
+        .positional('persona', {
+          type: 'string',
+          description: 'Persona to use from personas.md',
+          demandOption: true,
+          // default: DEFAULT_PERSONA,
+        })
+    },
     runDialogueSim
   )
   .command<Flags & { dialoguesFile: string }>(
