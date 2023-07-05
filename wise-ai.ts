@@ -7,11 +7,10 @@ import yargs from 'yargs'
 import { hideBin } from 'yargs/helpers'
 import { createInterface } from 'readline'
 
-const DEFAULT_DIALOGUES = './dialogues.txt'
-const DEFAULT_PERSONAS = './personas.md'
-const DEFAULT_PROMPTS = './default-prompts.md'
+const DEFAULT_DIALOGUES = './data/dialogues.txt'
+const DEFAULT_PERSONAS = './prompts/personas.md'
+const DEFAULT_PROMPTS = './prompts/default-prompts.md'
 const DEFAULT_MODEL = 'gpt-4'
-// const DEFAULT_PERSONA = 'abortion'
 
 
 //////////////////
