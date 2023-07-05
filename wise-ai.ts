@@ -288,6 +288,7 @@ async function trace(eventType: Trace['eventType'], dialogue: string, parameters
       }))
     }
   }
+  if (!fs.existsSync('./outputs')) fs.mkdirSync('./outputs')
   fs.appendFileSync(flags?.traceFile, JSON.stringify(t) + '\n')
 }
 
@@ -320,7 +321,7 @@ yargs(hideBin(process.argv))
     alias: 't',
     type: 'string',
     description: 'Leave a trace in a tracefile (for later evaluation)',
-    default: `trace-${Date.now()}.jsonl`
+    default: `outputs/trace-${Date.now()}.jsonl`
   })
   .command<Flags>(
     'interact',
