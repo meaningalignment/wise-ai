@@ -40,7 +40,7 @@ We are also working on evaluations for the step-by-step moral reasoning listed a
 
 ## Results so far
 
-We believe our Wise AI evaluation suite already shows limits of existing models.GPT4, as prompted here, shows a good understanding of morally significant situations, but generally does not respond appropriately to these situations.Current models demonstrate a rich understanding of human values, but struggle to apply those values in their responses.
+We believe our Wise AI evaluation suite already shows limits of existing models. GPT4, as prompted here, shows a good understanding of morally significant situations, but generally does not respond appropriately to these situations.Current models demonstrate a rich understanding of human values, but struggle to apply those values in their responses.
 
 Ultimately, we expect the models that will ace the suite will be trained with new methods and data sets, focused on moral reasoning in various situations. We also hope for models with new architectures that can explicitly encode their values, and recognize (as humans do) whether they're adhering to them, or are on shaky ground.
 
